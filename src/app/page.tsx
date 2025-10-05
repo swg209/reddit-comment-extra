@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import * as XLSX from 'xlsx';
 
 interface Comment {
@@ -15,6 +15,16 @@ interface Comment {
 type SortBy = 'time' | 'score';
 type SortOrder = 'asc' | 'desc';
 
+interface ExcelRow {
+  '层级': number;
+  '评论ID': string;
+  '作者': string;
+  '内容': string;
+  '点赞数': number;
+  '发布时间': string;
+  '时间戳': number;
+}
+
 export default function Home() {
   const [url, setUrl] = useState('');
   const [comments, setComments] = useState<Comment[]>([]);
@@ -24,7 +34,7 @@ export default function Home() {
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
 
   // 递归排序评论函数
-  const sortComments = (comments: Comment[], sortBy: SortBy, sortOrder: SortOrder): Comment[] => {
+  const sortComments = useCallback((comments: Comment[], sortBy: SortBy, sortOrder: SortOrder): Comment[] => {
     const sorted = [...comments].sort((a, b) => {
       let comparison = 0;
       
@@ -42,16 +52,16 @@ export default function Home() {
       ...comment,
       replies: comment.replies ? sortComments(comment.replies, sortBy, sortOrder) : []
     }));
-  };
+  }, []);
 
   // 使用 useMemo 优化排序性能
   const sortedComments = useMemo(() => {
     return sortComments(comments, sortBy, sortOrder);
-  }, [comments, sortBy, sortOrder]);
+  }, [comments, sortBy, sortOrder, sortComments]);
 
   // 递归扁平化评论数据用于Excel导出
-  const flattenComments = (comments: Comment[], depth = 0): any[] => {
-    const result: any[] = [];
+  const flattenComments = (comments: Comment[], depth = 0): ExcelRow[] => {
+    const result: ExcelRow[] = [];
     
     comments.forEach(comment => {
       result.push({

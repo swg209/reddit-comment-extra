@@ -16,17 +16,26 @@ interface RedditComment {
   };
 }
 
+interface ParsedComment {
+  id: string;
+  author: string;
+  body: string;
+  score: number;
+  created_utc: number;
+  replies: ParsedComment[];
+}
+
 interface RedditPost {
   kind: string;
   data: {
     children: Array<{
       kind: string;
-      data: any;
+      data: RedditComment['data'];
     }>;
   };
 }
 
-function parseComments(comments: RedditComment[]): any[] {
+function parseComments(comments: RedditComment[]): ParsedComment[] {
   return comments
     .filter(comment => comment.kind === 't1' && comment.data.body !== '[deleted]')
     .map(comment => ({
